@@ -1,6 +1,5 @@
 <?php
-
-use App\EventController;
+use App\Http\Controllers\Admin\EventController as AdminEventController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,7 +16,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 // event
-Route::resource('/event',EventController::class);
+Route::resource('event',AdminEventController::class);

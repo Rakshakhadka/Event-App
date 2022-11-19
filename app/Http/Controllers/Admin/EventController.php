@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Event;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
@@ -12,9 +14,31 @@ class EventController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+
+        $events = Event::orderBy('startdate', 'ASC');
+        $today = Carbon::parse(Carbon::now())->format('Y-m-d');
+        $sevenUp = Carbon::parse(Carbon::now())->addDays(7)->format('Y-m-d');
+        $sevenFin= Carbon::parse(Carbon::now())->subDays(7)->format('Y-m-d');
+        if($request ->search_by_event == 'finished'){
+            $events = $events->where('enddate','<',$today);
+        }
+        if($request ->search_by_event == 'upcoming')
+        {
+            $events = $events->where('startdate','>',$today);
+        }
+        if($request ->search_by_event == '7upcoming')
+        {
+            $events = $events->where('startdate','=',$sevenUp);
+        }
+        if($request ->search_by_event == '7finished')
+        {
+            $events = $events->where('enddate','=',$sevenFin);
+        }
+        $events = $events->get();
+        return view('backend.event.index',compact('events'));
+
     }
 
     /**
@@ -24,7 +48,7 @@ class EventController extends Controller
      */
     public function create()
     {
-        //
+        return view('backend.event.create');
     }
 
     /**
@@ -35,8 +59,21 @@ class EventController extends Controller
      */
     public function store(Request $request)
     {
-        //
-    }
+        $request->validate([
+            'title'=>'required',
+            'description'=> 'required',
+            "start_date" => "required|after_or_equal:today",
+            "end_date" => "required|after:start_date",
+        ]);
+        $event = new Event();
+        $event->title = $request->title;
+        $event->description = $request->description;
+        $event->startdate = $request->start_date;
+        $event->enddate =$request->end_date;
+        $event->save();
+        $request->session()->flash('message','Record saved successfully');
+        return redirect()->route('event.index');
+        }
 
     /**
      * Display the specified resource.
@@ -57,7 +94,8 @@ class EventController extends Controller
      */
     public function edit($id)
     {
-        //
+        $event = Event::find($id);
+        return view('backend.event.edit',compact('event'));
     }
 
     /**
@@ -69,7 +107,20 @@ class EventController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $request->validate([
+            'title'=>'required',
+            'description'=> 'required',
+            "start_date" => "required|after_or_equal:today",
+            "end_date" => "required|after:start_date",
+        ]);
+        $event = Event::find($id);
+        $event->title = $request->title;
+        $event->description = $request->description;
+        $event->startdate = $request->start_date;
+        $event->enddate =$request->end_date;
+        $event->save();
+        $request->session()->flash('message','Record Updated successfully');
+        return redirect()->route('event.index');
     }
 
     /**
@@ -80,6 +131,8 @@ class EventController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $event = Event::find($id);
+        $event->delete();
+        return response('data delete');
     }
 }
